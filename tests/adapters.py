@@ -14,6 +14,8 @@ from cs336_basics.bpe_trainer import train_bpe
 from cs336_basics.tokenizer import Tokenizer
 from cs336_basics.linear import Linear
 from cs336_basics.embedding import Embedding
+from cs336_basics.rmsnorm import RMSNorm
+from cs336_basics.swiglu import SwiGLU
 
 
 def run_linear(
@@ -91,6 +93,7 @@ def run_swiglu(
     Returns:
         Float[Tensor, "... d_model"]: Output embeddings of the same shape as the input embeddings.
     """
+
     # Example:
     # If your state dict keys match, you can use `load_state_dict()`
     # swiglu.load_state_dict(weights)
@@ -98,7 +101,16 @@ def run_swiglu(
     # swiglu.w1.weight.data = w1_weight
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
-    raise NotImplementedError
+    swiglu = SwiGLU(
+        d_model=d_model,
+        d_ff=d_ff,
+    )
+    state_dict = swiglu.state_dict()
+    state_dict["w1_weights"] = w1_weight
+    state_dict["w2_weights"] = w2_weight
+    state_dict["w3_weights"] = w3_weight
+    swiglu.load_state_dict(state_dict)
+    return swiglu.forward(in_features)
 
 
 def run_scaled_dot_product_attention(
@@ -393,7 +405,14 @@ def run_rmsnorm(
         Float[Tensor,"... d_model"]: Tensor of with the same shape as `in_features` with the output of running
         RMSNorm of the `in_features`.
     """
-    raise NotImplementedError
+    rmsnorm = RMSNorm(
+        d_model=d_model,
+        eps=eps,
+    )
+    state_dict = rmsnorm.state_dict()
+    state_dict["gains"] = weights
+    rmsnorm.load_state_dict(state_dict)
+    return rmsnorm.forward(in_features)
 
 
 def run_silu(in_features: Float[Tensor, " ..."]) -> Float[Tensor, " ..."]:
@@ -407,7 +426,7 @@ def run_silu(in_features: Float[Tensor, " ..."]) -> Float[Tensor, " ..."]:
         Float[Tensor,"..."]: of with the same shape as `in_features` with the output of applying
         SiLU to each element.
     """
-    raise NotImplementedError
+    return in_features * torch.sigmoid(in_features)
 
 
 def run_get_batch(
