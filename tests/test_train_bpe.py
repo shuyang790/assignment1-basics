@@ -1,9 +1,30 @@
 import json
 import time
+import cProfile
+import io
+import pstats
+from pstats import SortKey
+
 
 from .adapters import run_train_bpe
 from .common import FIXTURES_PATH, gpt2_bytes_to_unicode
 
+def test_train_bpe_tiny():
+    """
+    Ensure that BPE training is relatively efficient by measuring training
+    time on this small dataset and throwing an error if it takes more than 1.5 seconds.
+    This is a pretty generous upper-bound, it takes 0.38 seconds with the
+    reference implementation on my laptop. In contrast, the toy implementation
+    takes around 3 seconds.
+    """
+    input_path = FIXTURES_PATH / "tinystories_sample.txt"
+    vocab, merges = run_train_bpe(
+        input_path=input_path,
+        vocab_size=265,
+        special_tokens=["<|endoftext|>"],
+    )
+    # print(f"TEST: vocab is {vocab}")
+    assert len(merges) > 0
 
 def test_train_bpe_speed():
     """
@@ -21,6 +42,7 @@ def test_train_bpe_speed():
         special_tokens=["<|endoftext|>"],
     )
     end_time = time.time()
+    print(f"TEST: BPE training took {end_time - start_time:.2f} seconds")
     assert end_time - start_time < 1.5
 
 
