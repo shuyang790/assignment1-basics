@@ -70,19 +70,18 @@ class Tokenizer:
         # )
         results = []
         for pretoken in pretokens:
-            if pretoken in self.vocab_lookup:
-                results.append(self.vocab_lookup[pretoken])
+            token_id = self.vocab_lookup.get(pretoken)
+            if token_id is not None:
+                results.append(token_id)
                 continue
             symbols = [bytes([x]) for x in list(pretoken)]
             for merge in self.merges:
                 if len(symbols) <= 2:
                     break
-                i = 0
-                while i < len(symbols) - 1:
+                for i in range(len(symbols) - 2, -1, -1):
                     if symbols[i] == merge[0] and symbols[i + 1] == merge[1]:
                         symbols[i] = merge[0] + merge[1]
                         del symbols[i + 1]
-                    i += 1
             for symbol in symbols:
                 results.append(self.vocab_lookup[symbol])
         # print(f"Encoded {text[:20]}... to {len(results)} tokens.")
