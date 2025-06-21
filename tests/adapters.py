@@ -12,6 +12,8 @@ from torch import Tensor
 
 from cs336_basics.bpe_trainer import train_bpe
 from cs336_basics.tokenizer import Tokenizer
+from cs336_basics.linear import Linear
+from cs336_basics.embedding import Embedding
 
 
 def run_linear(
@@ -32,7 +34,11 @@ def run_linear(
     Returns:
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
-    return torch.matmul(in_features, weights.t())
+    linear = Linear(d_in, d_out)
+    state_dict = linear.state_dict()
+    state_dict["weights"] = weights
+    linear.load_state_dict(state_dict)
+    return linear.forward(in_features)
 
 
 def run_embedding(
@@ -53,7 +59,14 @@ def run_embedding(
     Returns:
         Float[Tensor, "... d_model"]: Batch of embeddings returned by your Embedding layer.
     """
-    return torch.embedding(weights, token_ids)
+    embedding = Embedding(
+        num_embeddings=vocab_size,
+        embedding_dim=d_model,
+    )
+    state_dict = embedding.state_dict()
+    state_dict["weights"] = weights
+    embedding.load_state_dict(state_dict)
+    return embedding.forward(token_ids)
 
 
 def run_swiglu(
@@ -85,11 +98,7 @@ def run_swiglu(
     # swiglu.w1.weight.data = w1_weight
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
-    x1 = torch.matmul(in_features, w1_weight.t())
-    x2 = torch.matmul(in_features, w3_weight.t())
-    swiglu_out = torch.nn.functional.silu(x1) * x2
-    out = torch.matmul(swiglu_out, w2_weight.t())
-    return out
+    raise NotImplementedError
 
 
 def run_scaled_dot_product_attention(
