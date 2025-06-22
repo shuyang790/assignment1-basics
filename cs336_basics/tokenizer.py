@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-import os
 import pickle
-import time
-from typing import IO, Any, BinaryIO
 from collections.abc import Iterable
-from jaxtyping import Float, Int
 import regex as re
 
 
@@ -42,19 +38,17 @@ class Tokenizer:
         """
         Encode a string into a list of tokens.
         """
-        pretokens = []
+        pretokens: list[bytes] = []
         PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
         # Tokenize the part using the regex pattern
         if not self.special_tokens:
-            splits = [text]
+            splits: list[str] = [text]
         else:
-            splits = re.split(
-                "|".join([re.escape(x) for x in self.special_tokens]), text
-            )
-        cur_idx = 0
+            splits: list[str] = re.split("|".join([re.escape(x) for x in self.special_tokens]), text)
+        cur_idx: int = 0
         for part in splits:
             for token in re.finditer(PAT, part):
-                token = token.group(0).encode("utf-8")
+                token: bytes = token.group(0).encode("utf-8")
                 pretokens.append(token)
             cur_idx += len(part)
             # print(f"Dealt with part: {part}, current index: {cur_idx}")
@@ -68,13 +62,13 @@ class Tokenizer:
         # print(
         #     f"Tokenized text of length {len(text)} into {len(pretokens)} pretokens: {pretokens[:20]}..."
         # )
-        results = []
+        results: list[int] = []
         for pretoken in pretokens:
-            token_id = self.vocab_lookup.get(pretoken)
+            token_id: int | None = self.vocab_lookup.get(pretoken)
             if token_id is not None:
                 results.append(token_id)
                 continue
-            symbols = [bytes([x]) for x in list(pretoken)]
+            symbols: list[bytes] = [bytes([x]) for x in list(pretoken)]
             for merge in self.merges:
                 if len(symbols) <= 2:
                     break
@@ -90,7 +84,7 @@ class Tokenizer:
         # print()
         return results
 
-    def encode_iterable(self, iterable: Iterable[str]) -> list[int]:
+    def encode_iterable(self, iterable: Iterable[str]) -> Iterable[list[int]]:
         for text in iterable:
             yield from self.encode(text)
 
@@ -98,5 +92,5 @@ class Tokenizer:
         """
         Decode a list of token IDs back into a string.
         """
-        tokens = [self.vocab.get(i, "\ufffd".encode("utf-8")) for i in ids]
+        tokens: list[bytes] = [self.vocab.get(i, "\ufffd") for i in ids]
         return b"".join(tokens).decode("utf-8", errors="replace")

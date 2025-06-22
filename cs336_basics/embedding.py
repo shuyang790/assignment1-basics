@@ -1,15 +1,7 @@
 from __future__ import annotations
 
-import os
-import time
-import math
-from typing import IO, Any, BinaryIO
-from collections.abc import Iterable
-from jaxtyping import Float, Int
-import numpy.typing as npt
 import torch
 from torch import Tensor
-from einops import einsum
 
 
 class Embedding(torch.nn.Module):
