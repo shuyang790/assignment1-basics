@@ -51,6 +51,8 @@ class RotaryPositionEmbedding(torch.nn.Module):
         token_positions: Float[Tensor, "... seq_len"],
         verbose: bool = False,
     ) -> Float[Tensor, "... seq_len d_k"]:
+        in_dtype = x.dtype
+        x = x.to(torch.float32)
         x = rearrange(x, "... seq_len (half_d_k p) -> ... seq_len half_d_k p", p=2)
         pattern = (
             "... seq_len half_d_k -> ... " + " ".join(["1"] * (x.ndim - 3)) + " seq_len half_d_k 1"
@@ -77,4 +79,4 @@ class RotaryPositionEmbedding(torch.nn.Module):
             "... seq_len half_d_k p -> ... seq_len (half_d_k p)",
             p=2,
         )
-        return result
+        return result.to(in_dtype)

@@ -22,7 +22,7 @@ class Embedding(torch.nn.Module):
             tensor = tensor.to(dtype)
         if device is not None:
             tensor = tensor.to(device)
-        self.weights = torch.nn.Parameter(tensor)
+        self.weight = torch.nn.Parameter(tensor)
 
     def forward(self, token_ids: torch.Tensor) -> Tensor:
-        return self.weights[token_ids]
+        return self.weight[token_ids]

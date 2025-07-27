@@ -25,7 +25,7 @@ class Linear(torch.nn.Module):
             tensor = tensor.to(dtype)
         if device is not None:
             tensor = tensor.to(device)
-        self.weights = torch.nn.Parameter(tensor)
+        self.weight = torch.nn.Parameter(tensor)
 
     def forward(self, x: Tensor) -> Tensor:
-        return einsum(x, self.weights, "... in, out in -> ... out")
+        return einsum(x, self.weight, "... in, out in -> ... out")

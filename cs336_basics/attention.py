@@ -1,15 +1,10 @@
 from __future__ import annotations
 
-import os
-import time
 import math
-from typing import IO, Any, BinaryIO
-from collections.abc import Iterable
-from jaxtyping import Float, Int
-import numpy.typing as npt
+from jaxtyping import Float
 import torch
 from torch import Tensor
-from einops import einsum, rearrange, repeat
+from einops import einsum, rearrange
 
 from .rope import RotaryPositionEmbedding
 
@@ -103,6 +98,8 @@ class MultiheadSelfAttention(torch.nn.Module):
         in_features: Float[Tensor, " ... seq_len d_in"],
         token_positions: Float[Tensor, "... seq_len"] | None = None,
     ) -> Float[Tensor, " ... sequence_length d_out"]:
+        in_dtype = in_features.dtype
+        in_features = in_features.to(torch.float32)
         q = rearrange(self.q_weights, "(h d_k) d_model -> h d_k d_model", h=self.num_heads)
         k = rearrange(self.k_weights, "(h d_k) d_model -> h d_k d_model", h=self.num_heads)
         v = rearrange(self.v_weights, "(h d_k) d_model -> h d_k d_model", h=self.num_heads)
@@ -110,8 +107,12 @@ class MultiheadSelfAttention(torch.nn.Module):
         kx = einsum(k, in_features, "h d_k d_model, ... seq_len d_model -> ... h seq_len d_k")
         vx = einsum(v, in_features, "h d_k d_model, ... seq_len d_model -> ... h seq_len d_k")
 
-        if token_positions is not None:
-            assert self.rope is not None
+        if self.rope is not None:
+            if token_positions is None:
+                seq_len = in_features.shape[-2]
+                token_positions = rearrange(
+                    torch.arange(seq_len, device=in_features.device), "x -> 1 x"
+                )
             token_positions = token_positions.squeeze()
             qx = self.rope(qx, token_positions)
             kx = self.rope(kx, token_positions)
@@ -122,4 +123,4 @@ class MultiheadSelfAttention(torch.nn.Module):
         out = einsum(
             self.o_weights, attention, "d_model hd_k, ... seq_len hd_k -> ... seq_len d_model"
         )
-        return out
+        return out.to(in_dtype)
